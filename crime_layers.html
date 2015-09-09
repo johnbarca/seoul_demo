@@ -122,20 +122,12 @@
          
          var layerNum = parseInt($li.attr('id')) ;
          
-         if (selectedLayer != layerNum){
-             switch(layerNum){
-                 case 0:
-                     for (var i = 0; i < num_sublayers; i++){
-                        layers.getSubLayer(i).show();
-                     }
-                     break;
-                 default:
-                      for (var i = 0; i < num_sublayers; i++){
-                              layers.getSubLayer(i).hide();
-                      }              
-                      layers.getSubLayer(layerNum-1).show();		   
-                      break;
-              }           
+         if (selectedLayer != layerNum){             
+             for (var i = 0; i < num_sublayers; i++){
+                  layers.getSubLayer(i).hide();
+             }              
+             layers.getSubLayer(layerNum-1).show();   
+             
           }          
       });
    }
