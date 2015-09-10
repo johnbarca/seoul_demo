@@ -95,10 +95,10 @@
 
            //add handler to get click position
            var sublayer0 = layers.getSubLayer(0);
-           
+           sublayer0.setInteraction(true);
            sublayer0.on('featureClick', function(e, pos, latlng, data) {
              // e.stopPropagation();    
-              
+              alert('clicked');
                 
               }); // end click handler
            
@@ -116,9 +116,52 @@
              });
     }
 
+  
     function charts(data){
-        var nest = d3.entries(data);
-        console.log(nest);
+        //move name out key
+        var json = d3.entries(data);
+        
+        var dims = { width:300, height:300, top:10, left:10}; 
+       
+         var y = d3.scale.linear()
+                .range([dims.height, 0])
+                .domain([0, d3.max(json, function(d) { return d.value; })]);
+         
+
+         var x = d3.scale.ordinal()               
+                .rangeRoundBands([0, dims.width], .2)
+                .domain(json.map(function(d){ return d.key; }));
+          
+         var svg = d3.selectAll(".bar").remove();
+        
+        
+        //create svg for histogram.
+        var hsvg = d3.select("#chart")
+            .append("svg")
+            .attr("width", dims.width + dims.left)
+            .attr("height", dims.height + dims.top)
+            .append("g")
+            .attr("transform", "translate(" + dims.left + "," + dims.top + ")");
+
+        var bars = hsvg.selectAll("bar")
+                .data(json).enter()
+                .append("g").attr("class", "bar");
+        
+        //create the rectangles.
+        bars.append("rect")
+            .attr("x", function(d) { return x(d.key); })
+            .attr("y", function(d) { return y(d.value); })
+            .attr("width", x.rangeBand())
+             //.attr("width", dims.width/json.length)
+            .attr("height", function(d) { return dims.height - y(d.value); })
+            .attr('fill', '#0000ff');
+        
+        /*
+         json.forEach(function(d){
+              console.log(x(d.key));
+              console.log(x.rangeBand());
+          });
+        */
    }
 
 
@@ -168,7 +211,8 @@
      <li id="2">Violent 2010</li>
     </ul>
   </div>
+ 
  </div>
-
+<div id = "chart" style="top:5px"></div>
 </body>
 </html>
