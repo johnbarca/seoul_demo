@@ -112,12 +112,12 @@
          $.getJSON('https://bugblatter1.cartodb.com/api/v2/sql?format=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,
              function(data) { 
                  console.log(data.rows[0]);
-                 charts(data.rows[0]);
+                 charts('#chart', data.rows[0]);
              });
     }
 
   
-    function charts(data){
+    function charts(div_id, data){
         //move name out key
         var json = d3.entries(data);
         
@@ -132,11 +132,14 @@
                 .rangeRoundBands([0, dims.width], .2)
                 .domain(json.map(function(d){ return d.key; }));
           
-         var svg = d3.selectAll(".bar").remove();
         
+        //jquery to clear the div -- should be able to do with d3js, but chart keeps moving down.
+        $(div_id).empty();
+        //var svg = d3.selectAll(".bar").remove();
+         
         
         //create svg for histogram.
-        var hsvg = d3.select("#chart")
+        var hsvg = d3.select(div_id)
             .append("svg")
             .attr("width", dims.width + dims.left)
             .attr("height", dims.height + dims.top)
@@ -144,7 +147,8 @@
             .attr("transform", "translate(" + dims.left + "," + dims.top + ")");
 
         var bars = hsvg.selectAll("bar")
-                .data(json).enter()
+                .data(json)
+                .enter()
                 .append("g").attr("class", "bar");
         
         //create the rectangles.
