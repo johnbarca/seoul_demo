@@ -57,6 +57,19 @@
 	text-align:left;
 	z-index:105;
      }
+
+.axis path,
+.axis line {
+  fill: none;
+  stroke: #000;
+  shape-rendering: crispEdges;
+}
+
+.bar {
+  fill: steelblue;
+}
+
+
   </style>
 
   <script type = "text/javascript">
@@ -121,7 +134,10 @@
         //move name out key
         var json = d3.entries(data);
         
-        var dims = { width:300, height:300, top:10, left:10}; 
+        //put in dims
+        var dims = { top:10, left:50, bottom:10, right:10}; 
+        dims.width = 300 - dims.left - dims.right;
+        dims.height = 300 - dims.top - dims.bottom;
        
          var y = d3.scale.linear()
                 .range([dims.height, 0])
@@ -131,6 +147,15 @@
          var x = d3.scale.ordinal()               
                 .rangeRoundBands([0, dims.width], .2)
                 .domain(json.map(function(d){ return d.key; }));
+
+        var xAxis = d3.svg.axis()
+            .scale(x)
+            .orient("bottom");
+
+	var yAxis = d3.svg.axis()
+	    .scale(y)
+	    .orient("left")
+	    .tickFormat(d3.format("s"));
           
         
         //jquery to clear the div -- should be able to do with d3js, but chart keeps moving down.
@@ -141,16 +166,18 @@
         //create svg for histogram.
         var hsvg = d3.select(div_id)
             .append("svg")
-            .attr("width", dims.width + dims.left)
-            .attr("height", dims.height + dims.top)
+            .attr("width", dims.width + dims.left + dims.right)
+            .attr("height", dims.height + dims.top + dims.bottom)
             .append("g")
             .attr("transform", "translate(" + dims.left + "," + dims.top + ")");
 
+        //create bar chart
         var bars = hsvg.selectAll("bar")
                 .data(json)
                 .enter()
                 .append("g").attr("class", "bar");
         
+     
         //create the rectangles.
         bars.append("rect")
             .attr("x", function(d) { return x(d.key); })
@@ -159,6 +186,24 @@
              //.attr("width", dims.width/json.length)
             .attr("height", function(d) { return dims.height - y(d.value); })
             .attr('fill', '#0000ff');
+        
+       hsvg.append("g")
+            .attr("class", "x axis")
+            .attr("transform", "translate(0," + dims.height + ")")
+            .call(xAxis)
+            .text('yo');
+
+	hsvg.append("g")
+	      .attr("class", "y axis")
+              .attr("font-size", "12px")
+	      .call(yAxis)
+	      .append("text")/*
+	      .attr("transform", "rotate(-90)")
+	      .attr("y", 6)
+	      .attr("dy", ".71em")
+	      .style("text-anchor", "end")
+	      .text("Population")*/;
+
         
         /*
          json.forEach(function(d){
