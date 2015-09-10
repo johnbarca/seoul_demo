@@ -71,7 +71,7 @@
         maxZoom: 20,
         minZoom: 5
       }).on('click', function(e){
-         //console.log(e.latlng);
+         getData(e.latlng);
       });
 
       //add some tiles      
@@ -94,21 +94,32 @@
          createLayerSelector(layers);
 
            //add handler to get click position
-           var sublayer0 = layers.getSubLayer(1);
+           var sublayer0 = layers.getSubLayer(0);
            
            sublayer0.on('featureClick', function(e, pos, latlng, data) {
-              e.stopPropagation();    
-              var qs = 'SELECT vehicle_2010 FROM all_crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(' + latlng.lng + ',' + latlng.lat + ', 4326) as geom)'; 
-                 $.getJSON('https://bugblatter1.cartodb.com/api/v2/sql?format=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,
-                   function(data) { 
-                       console.log(data);
-                  });
+             // e.stopPropagation();    
+              
                 
               }); // end click handler
            
           });// end create layer
 
        }//end init
+
+    function getData(latlng){
+         var qs = 'SELECT vehicle_2010, vehicle_2011, vehicle_2012, vehicle_2013, vehicle_2014, vehicle_2015 FROM all_crime WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(' + latlng.lng + ',' + latlng.lat + '), 4326))'; 
+         console.log(qs);
+         $.getJSON('https://bugblatter1.cartodb.com/api/v2/sql?format=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,
+             function(data) { 
+                 console.log(data.rows[0]);
+                 charts(data.rows[0]);
+             });
+    }
+
+    function charts(data){
+        var nest = d3.entries(data);
+        console.log(nest);
+   }
 
 
     // handle layer selector
