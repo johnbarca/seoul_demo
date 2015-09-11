@@ -102,16 +102,14 @@
         .addTo(map)
         .on('done', function(layers) {   
 
-
          //setup layer selector handler
          createLayerSelector(layers);
 
            //add handler to get click position
-           var sublayer0 = layers.getSubLayer(0);
+           var sublayer0 = layers.getSubLayer(1);
            sublayer0.setInteraction(true);
-           sublayer0.on('featureClick', function(e, pos, latlng, data) {
-             // e.stopPropagation();    
-              alert('clicked');
+           sublayer0.on('featureClick', function(e, latlng, pos, data) {              
+              getData(new L.latLng(latlng[0], latlng[1]));
                 
               }); // end click handler
            
@@ -121,8 +119,8 @@
 
     function getData(latlng){
          var qs = 'SELECT vehicle_2010, vehicle_2011, vehicle_2012, vehicle_2013, vehicle_2014, vehicle_2015 FROM all_crime WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(' + latlng.lng + ',' + latlng.lat + '), 4326))'; 
-         console.log(qs);
-         $.getJSON('https://bugblatter1.cartodb.com/api/v2/sql?format=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,
+         // can use $.getJSON or d3.json
+         d3.json('https://bugblatter1.cartodb.com/api/v2/sql?type=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,         
              function(data) { 
                  console.log(data.rows[0]);
                  charts('#chart', data.rows[0]);
@@ -133,9 +131,16 @@
     function charts(div_id, data){
         //move name out key
         var json = d3.entries(data);
+
+       //hack to remove, eg, vehicle_ from vehicle_2010 
+       json.forEach(function(d){
+           d.key = d.key.replace(/[a-z]+_/g,'');
+       });
+
+        //console.log(d3.max(json, function(d) { return d.value; }));
         
         //put in dims
-        var dims = { top:10, left:50, bottom:10, right:10}; 
+        var dims = { top:10, left:50, bottom:20, right:10}; 
         dims.width = 300 - dims.left - dims.right;
         dims.height = 300 - dims.top - dims.bottom;
        
@@ -149,13 +154,13 @@
                 .domain(json.map(function(d){ return d.key; }));
 
         var xAxis = d3.svg.axis()
-            .scale(x)
-            .orient("bottom");
+                 .scale(x)             
+                 .orient("bottom");
 
 	var yAxis = d3.svg.axis()
-	    .scale(y)
-	    .orient("left")
-	    .tickFormat(d3.format("s"));
+	         .scale(y)
+	         .orient("left")
+	         .tickFormat(d3.format(".2n"));
           
         
         //jquery to clear the div -- should be able to do with d3js, but chart keeps moving down.
@@ -184,26 +189,27 @@
             .attr("y", function(d) { return y(d.value); })
             .attr("width", x.rangeBand())
              //.attr("width", dims.width/json.length)
-            .attr("height", function(d) { return dims.height - y(d.value); })
-            .attr('fill', '#0000ff');
+            .attr("height", function(d) { return dims.height - y(d.value); });
+            //.attr('fill', '#0000ff');
         
        hsvg.append("g")
             .attr("class", "x axis")
-            .attr("transform", "translate(0," + dims.height + ")")
-            .call(xAxis)
-            .text('yo');
+            .attr("font-size", "12px")
+            .attr("transform", "translate(0," + dims.height + ")")            
+            .call(xAxis);
+
 
 	hsvg.append("g")
 	      .attr("class", "y axis")
               .attr("font-size", "12px")
-	      .call(yAxis)
-	      .append("text")/*
+	      .call(yAxis);/*
+	      .append("text")
 	      .attr("transform", "rotate(-90)")
 	      .attr("y", 6)
 	      .attr("dy", ".71em")
 	      .style("text-anchor", "end")
-	      .text("Population")*/;
-
+	      .text("Weighted crime");
+               */
         
         /*
          json.forEach(function(d){
