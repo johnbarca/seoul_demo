@@ -9,7 +9,7 @@
  <link rel="stylesheet" href="http://libs.cartocdn.com/cartodb.js/v3/themes/css/cartodb.css" /> 
 
   <style>
- 
+
    
     #map { 
         float: left;
@@ -41,8 +41,8 @@
     div.emapsite-infobox {
         padding: 5px;
         position: absolute;
-        right: 5px;
-        top: 5px;
+        right: 10px;
+        top: 60px;
 	display: inline-block;
 	-webkit-box-shadow: rgba(0, 0, 0, 0.5) 0 0 4px 2px;
 	-moz-box-shadow: rgba(0, 0, 0, 0.5) 0 0 4px 2px;
@@ -80,6 +80,7 @@
         minZoom: 5
       }).on('click', function(e){
          getData(e.latlng);
+          e.stopPropagation();
       });
 
       //add some tiles      
@@ -99,6 +100,11 @@
 
          //setup layer selector handler
          createLayerSelector(layers);
+
+           //add search box
+           var v = cdb.vis.Overlay.create('search', map.viz, {})
+           v.show();
+           $('#map').append(v.render().el);
 
            //add handler to get click position
            var sublayer0 = layers.getSubLayer(1);
@@ -127,16 +133,7 @@
   
     function charts(div_id, data){
         //move name out key
-        var json = d3.entries(data);
-
-       //hack to remove, eg, vehicle_ from vehicle_2010 
-       json.forEach(function(d, i){
-           //d.key = d.key.replace(/[a-z]+_/g,'');
-           
-           d.label = i;
-       });
-
-        //console.log(d3.max(json, function(d) { return d.value; }));
+        var json = d3.entries(data);   
         
         //put in dims
         var dims = { top:10, left:50, bottom:20, right:10}; 
@@ -154,7 +151,7 @@
 
         var xAxis = d3.svg.axis()
                  .scale(x)
-		 //just return the year
+		 //alternate text labels
                  .tickFormat(function(d, i){ return (i % 2 == 0) ? '     ' + d.replace(/[a-z]+_/g,'') : '' ;})                       
                  .orient("bottom");
 
