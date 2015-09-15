@@ -237,12 +237,15 @@
       function pie(data, div_id) {
            var year = data.key.replace(/[a-z]+_/g,'');
                    
-          var qs ="  select array_to_json(array_agg(row_to_json(t))) as features "
-          qs += " from ( ";
-      	  qs += " SELECT sum(count_type) as total, outcome FROM met_outcomes  WHERE postcode = (SELECT postcode from crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(" + latlng.lng + "," + latlng.lat + "), 4326))) AND year = " + year + " GROUP BY outcome ";
-          qs += ") t";
-          // qs = "SELECT sum(count_type) as total, outcome FROM met_outcomes WHERE postcode = (SELECT postcode from crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(" + latlng.lng + "," + latlng.lat + "), 4326))) AND year = " + year + " GROUP BY outcome, year";  
-           console.log(qs);
+          var qs ="SELECT array_to_json(array_agg(row_to_json(t))) as features "
+          qs += "    FROM ( ";
+      	  qs += "     SELECT sum(count_type) as total, outcome "; 
+          qs += "       FROM met_outcomes  WHERE postcode = "
+          qs += "          (SELECT postcode FROM crimes ";
+          qs += "             WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(" + latlng.lng + "," + latlng.lat + "), 4326))) ";
+          qs +=               "AND year = " + year + " GROUP BY outcome ";
+          qs += "     ) t";
+          
            d3.json('https://bugblatter1.cartodb.com/api/v2/sql?type=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,
               function(data){
                   console.log(d3.entries(data.rows[0].features));
@@ -255,17 +258,6 @@
 
         $(div_id).empty();
       
-        /*
-        var dataset = [
-          { outcome: 'Solved', total: 10 }, 
-          { outcome: 'None', total: 20 },
-          { outcome: 'Not solved', total: 30 }
-        
-        ];
-       */
-
-       //var dataset = d3.entries(data.rows[0].features);
-
         var width = 250;
         var height = 250;      
         var left = 50;
