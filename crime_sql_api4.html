@@ -236,26 +236,35 @@
 
       function pie(data, div_id) {
            var year = data.key.replace(/[a-z]+_/g,'');
-           var qs;
-
-        
-         //       qs +="     FROM (SELECT year, sum(count_type) as total, outcome FROM met_outcomes WHERE postcode = (SELECT postcode from crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(" + latlng.lng + "," + latlng.lat + "), 4326))) AND year = " + year + " GROUP BY outcome, year) f";
-           qs = "SELECT sum(count_type) as total, outcome FROM met_outcomes WHERE postcode = (SELECT postcode from crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(" + latlng.lng + "," + latlng.lat + "), 4326))) AND year = " + year + " GROUP BY outcome, year";  
+                   
+          var qs ="  select array_to_json(array_agg(row_to_json(t))) as features "
+          qs += " from ( ";
+      	  qs += " SELECT sum(count_type) as total, outcome FROM met_outcomes  WHERE postcode = (SELECT postcode from crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(" + latlng.lng + "," + latlng.lat + "), 4326))) AND year = " + year + " GROUP BY outcome ";
+          qs += ") t";
+          // qs = "SELECT sum(count_type) as total, outcome FROM met_outcomes WHERE postcode = (SELECT postcode from crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(" + latlng.lng + "," + latlng.lat + "), 4326))) AND year = " + year + " GROUP BY outcome, year";  
            console.log(qs);
            d3.json('https://bugblatter1.cartodb.com/api/v2/sql?type=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,
               function(data){
-                  console.log(d3.entries(data.rows));
+                  console.log(d3.entries(data.rows[0].features));
+                  draw_pie(d3.entries(data.rows[0].features), div_id);
               }
            );
+        }
+
+       function draw_pie(dataset, div_id){
 
         $(div_id).empty();
       
+        /*
         var dataset = [
-          { label: 'Solved', count: 10 }, 
-          { label: 'None', count: 20 },
-          { label: 'Not solved', count: 30 }
+          { outcome: 'Solved', total: 10 }, 
+          { outcome: 'None', total: 20 },
+          { outcome: 'Not solved', total: 30 }
         
         ];
+       */
+
+       //var dataset = d3.entries(data.rows[0].features);
 
         var width = 250;
         var height = 250;      
@@ -278,7 +287,8 @@
           .outerRadius(radius);
 
         var pie = d3.layout.pie()
-          .value(function(d) { return d.count; })
+          .value(function(d) { 
+                  return d.value.total; })
           .sort(null);
 
         var path = svg.selectAll('path')
@@ -287,7 +297,7 @@
           .append('path')
           .attr('d', arc)
           .attr('fill', function(d, i) { 
-            return color(d.data.label);
+            return color(d.data.value.outcome);
           });
 
       }
