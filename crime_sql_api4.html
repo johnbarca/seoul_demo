@@ -58,12 +58,23 @@
 	z-index:105;
      }
 
-.axis path,
-.axis line {
-  fill: none;
-  stroke: #000;
-  shape-rendering: crispEdges;
-}
+	.axis path,
+	.axis line {
+	  fill: none;
+	  stroke: #000;
+	  shape-rendering: crispEdges;
+	}
+
+	.legend{
+	    position:absolute; top:305px;;
+	    display:inline-block;
+	    border-collapse: collapse;
+	    border-spacing: 0px;
+	}
+        .legend td{
+            padding:4px 5px;
+            vertical-align:bottom;
+        }
 
   </style>
 
@@ -265,7 +276,7 @@
         var radius = Math.min(width, height) / 2;
 
         var color = d3.scale.ordinal()
-            .range(['#ff0000', '#00ff00', '#0000ff']); 
+            .range(['#ff0000', '#000000', '#666666']); 
 
         var svg = d3.select(div_id)
           .append('svg')
@@ -291,6 +302,30 @@
           .attr('fill', function(d, i) { 
             return color(d.data.value.outcome);
           });
+
+        // create table for legend.
+        var legend = d3.select(div_id).append("table").attr('class','legend');
+        
+        // create one row per segment.
+        var tr = legend.append("tbody").selectAll("tr").data(dataset).enter().append("tr");
+            
+        // create the first column for each segment.
+        tr.append("td").append("svg").attr("width", '16').attr("height", '16').append("rect")
+            .attr("width", '16').attr("height", '16')
+			.attr("fill",function(d){ return color(d.value.outcome); });
+            
+        // create the second column for each segment.
+        tr.append("td").text(function(d){  
+                     switch(d.value.outcome){
+                         case 0:
+                            return 'None';
+                         case 1:
+                            return 'Charged';
+                         case 2:
+                            return 'Not prosecuted';
+                     }
+               }
+          );
 
       }
 
