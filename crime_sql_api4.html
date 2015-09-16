@@ -66,7 +66,7 @@
 	}
 
 	.legend{
-	    position:absolute; top:305px;;
+	    position:absolute; top:325px;
 	    display:inline-block;
 	    border-collapse: collapse;
 	    border-spacing: 0px;
@@ -75,6 +75,9 @@
             padding:4px 5px;
             vertical-align:bottom;
         }
+        .bar{
+            color:'#00ff00'
+        }
 
   </style>
 
@@ -82,6 +85,7 @@
 
   var map;  
   var latlng;
+  var crime = 'antisocial';
 
     function init(){
       // initiate leaflet map
@@ -132,8 +136,8 @@
        }//end init
 
     function getData(latlng){
-         var qs = 'SELECT antisocial_2010, burglary_2010, antisocial_2011, burglary_2011, antisocial_2012, burglary_2012, antisocial_2013, ';
-             qs += 'burglary_2013, antisocial_2014, burglary_2014, antisocial_2015, burglary_2015 FROM crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(' + latlng.lng + ',' + latlng.lat + '), 4326))';     
+         var fields = getFields();        
+         var qs = 'SELECT ' + fields + ' FROM crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(' + latlng.lng + ',' + latlng.lat + '), 4326))';     
          
          // can use $.getJSON or d3.json
          d3.json('https://bugblatter1.cartodb.com/api/v2/sql?type=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,         
@@ -164,7 +168,7 @@
         var xAxis = d3.svg.axis()
                  .scale(x)
 		 //alternate text labels
-                 .tickFormat(function(d, i){ return (i % 2 == 0) ? '     ' + d.replace(/[a-z]+_/g,'') : '' ;})                       
+                 .tickFormat(function(d, i){ return (i % 2 == 0) ? d.replace(/[a-z]+_/g,'') : '' ;})                       
                  .orient("bottom");
 
 	var yAxis = d3.svg.axis()
@@ -198,7 +202,8 @@
             .attr("y", function(d) { return y(d.value); })
             .attr("width", x.rangeBand())            
             .attr("height", function(d) { return dims.height - y(d.value); })
-            .attr('fill', function(d) { return d.key.indexOf('burglary') > -1 ? '#0000ff' : '#ff0000'})
+            //.attr('fill', function(d) { return d.key.indexOf('burglary') > -1 ? '#0000ff' : '#ff0000'})
+            .attr("fill", "blue")
             .on("mouseover", function(d) {pie(d, '#pie');});
         
        hsvg.append("g")
@@ -246,7 +251,7 @@
       }
 
       function pie(data, div_id) {
-           var year = data.key.replace(/[a-z]+_/g,'');
+          var year = data.key.replace(/[a-z]+_/g,'');
                    
           var qs ="SELECT array_to_json(array_agg(row_to_json(t))) as features "
           qs += "    FROM ( ";
@@ -254,12 +259,13 @@
           qs += "       FROM met_outcomes  WHERE postcode = "
           qs += "          (SELECT postcode FROM crimes ";
           qs += "             WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(" + latlng.lng + "," + latlng.lat + "), 4326))) ";
-          qs +=               "AND year = " + year + " GROUP BY outcome ";
+          qs +=               "AND year = " + year + " GROUP BY outcome ORDER BY outcome ";
           qs += "     ) t";
+
+          console.log(qs);
           
            d3.json('https://bugblatter1.cartodb.com/api/v2/sql?type=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,
-              function(data){
-                  console.log(d3.entries(data.rows[0].features));
+              function(data){                 
                   draw_pie(d3.entries(data.rows[0].features), div_id);
               }
            );
@@ -269,14 +275,14 @@
 
         $(div_id).empty();
       
-        var width = 250;
-        var height = 250;      
+        var width = 200;
+        var height = 200;      
         var left = 50;
-        var top = 20; 
+        var top = 40; 
         var radius = Math.min(width, height) / 2;
 
         var color = d3.scale.ordinal()
-            .range(['#ff0000', '#000000', '#666666']); 
+            .range(['#000000', '#ff0000', '#444444']); 
 
         var svg = d3.select(div_id)
           .append('svg')
@@ -310,20 +316,22 @@
         var tr = legend.append("tbody").selectAll("tr").data(dataset).enter().append("tr");
             
         // create the first column for each segment.
-        tr.append("td").append("svg").attr("width", '16').attr("height", '16').append("rect")
-            .attr("width", '16').attr("height", '16')
-			.attr("fill",function(d){ return color(d.value.outcome); });
+        tr.append("td").append("svg").attr("width", '16').attr("height", '16')
+            .append("rect")
+            .attr("width", '16')
+            .attr("height", '16')
+	    .attr("fill",function(d){ return color(d.value.outcome); });
             
         // create the second column for each segment.
         tr.append("td").text(function(d){  
-                     switch(d.value.outcome){
-                         case 0:
-                            return 'None';
-                         case 1:
-                            return 'Charged';
-                         case 2:
-                            return 'Not prosecuted';
-                     }
+              switch(d.value.outcome){
+                   case 0:
+                        return 'None';
+                   case 1:
+                       return 'Charged';
+                   case 2:
+                       return 'Not prosecuted';
+                   }
                }
           );
 
@@ -349,6 +357,9 @@
          $options.removeClass('selected');
          var $li = $(e.target);    
          
+         //store layer selection
+         crime = $li[0].dataset.value ;
+         
          //highlight selected
          $li.addClass('selected');
          
@@ -363,7 +374,16 @@
       });
    }
 
-</script>
+   function getFields(){
+       var res = '';
+       for (var i = 2010; i<2016; i++){
+           if (i > 2010) res += ",";
+           res += crime + '_' + i;
+       }
+       return res;
+   }
+
+</script
 
 
 </head>
@@ -371,9 +391,9 @@
  <div id="map">
   <div id="layer_selector" class="emapsite-infobox">
     <ul>        
-     <li id="1" class="selected">Anti-social 2010</li>
-     <li id="2">Vehicle 2010</li>
-     <li id="3">Burglary 2010</li>     
+     <li id="1" class="selected" data-value="antisocial">Anti-social 2010</li>
+     <li id="2" data-value="vehicle">Vehicle 2010</li>
+     <li id="3" data-value = "burglary">Burglary 2010</li>     
     </ul>
   </div>
  
