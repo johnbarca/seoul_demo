@@ -137,12 +137,13 @@
 
     function getData(latlng){
          var fields = getFields();        
-         var qs = 'SELECT ' + fields + ' FROM crimes WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(' + latlng.lng + ',' + latlng.lat + '), 4326))';     
+         var qs = 'SELECT ' + fields + ' FROM crimes ';
+             qs +='WHERE ST_Intersects(the_geom, ST_SetSRID(ST_MakePoint(' + latlng.lng + ',' + latlng.lat + '), 4326))';     
          
-         // can use $.getJSON or d3.json
+         //can use $.getJSON or d3.json
          d3.json('https://bugblatter1.cartodb.com/api/v2/sql?type=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,         
              function(data) {                
-                 charts('#chart', data.rows[0]);
+                 //charts('#chart', data.rows[0]);
              });
     }
 
@@ -168,7 +169,8 @@
         var xAxis = d3.svg.axis()
                  .scale(x)
 		 //alternate text labels
-                 .tickFormat(function(d, i){ return (i % 2 == 0) ? d.replace(/[a-z]+_/g,'') : '' ;})                       
+                 //.tickFormat(function(d, i){ return (i % 2 == 0) ? d.replace(/[a-z]+_/g,'') : '' ;}) 
+                 .tickFormat(function(d){ return d.replace(/[a-z]+_/g,'');})
                  .orient("bottom");
 
 	var yAxis = d3.svg.axis()
@@ -201,8 +203,7 @@
             .attr("x", function(d) { return x(d.key); })
             .attr("y", function(d) { return y(d.value); })
             .attr("width", x.rangeBand())            
-            .attr("height", function(d) { return dims.height - y(d.value); })
-            //.attr('fill', function(d) { return d.key.indexOf('burglary') > -1 ? '#0000ff' : '#ff0000'})
+            .attr("height", function(d) { return dims.height - y(d.value); })      
             .attr("fill", "blue")
             .on("mouseover", function(d) {pie(d, '#pie');});
         
@@ -226,8 +227,8 @@
 
 	var alternate_ticks = true;
 
-	var short_tick_length = 0;
-	var long_tick_length = 4;
+	var short_tick_length = 2;
+	var long_tick_length = 5;
 
 	// Alternate the tick line between long and short ticks
 	d3.selectAll("g.x.axis g.tick line")
@@ -262,11 +263,10 @@
           qs +=               "AND year = " + year + " GROUP BY outcome ORDER BY outcome ";
           qs += "     ) t";
 
-          console.log(qs);
-          
+              
            d3.json('https://bugblatter1.cartodb.com/api/v2/sql?type=JSON&api_key=a36647bedac6e46dbaed2c7d0eb72a5fbc0b162e&q=' + qs,
               function(data){                 
-                  draw_pie(d3.entries(data.rows[0].features), div_id);
+                 // draw_pie(d3.entries(data.rows[0].features), div_id);
               }
            );
         }
@@ -282,7 +282,7 @@
         var radius = Math.min(width, height) / 2;
 
         var color = d3.scale.ordinal()
-            .range(['#000000', '#ff0000', '#444444']); 
+            .range(['#000000', '#ff0000', '#777777']); 
 
         var svg = d3.select(div_id)
           .append('svg')
@@ -320,7 +320,7 @@
             .append("rect")
             .attr("width", '16')
             .attr("height", '16')
-	    .attr("fill",function(d){ return color(d.value.outcome); });
+	    .attr("fill", function(d){ return color(d.value.outcome); });
             
         // create the second column for each segment.
         tr.append("td").text(function(d){  
